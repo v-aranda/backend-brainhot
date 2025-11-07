@@ -9,6 +9,7 @@ export const swaggerSpec = swaggerJSDoc({
       description: 'API documentation'
     },
     servers: [
+      { url: 'https://brainhot.varanda.dev.br/' },
       { url: 'http://localhost:3000' }
     ],
     components: {
