@@ -2,7 +2,8 @@ services:
   app:
     build:
       context: .
-      dockerfile: Dockerfile
+      dockerfile: ../Dockerfile
+      target: dev
     working_dir: /workspace
     command: sh -c "sleep infinity"
     ports:
@@ -19,6 +20,24 @@ services:
     depends_on:
       - db
     mem_limit: 2g
+
+  # Production variant: builds the 'prod' target from the same Dockerfile.
+  # Not part of the default dev flow — run explicitly when you want a production image.
+  app_prod:
+    build:
+      context: .
+      dockerfile: ../Dockerfile
+      target: prod
+    working_dir: /workspace
+    ports:
+      - "3001:3000" # mapped to a different host port to avoid conflict with dev
+    environment:
+      - PORT=3000
+      - NODE_ENV=production
+      - DATABASE_URL=postgresql://postgres:postgres@db:5432/appdb
+    depends_on:
+      - db
+    restart: unless-stopped
 
   db:
     image: postgres:16-alpine
