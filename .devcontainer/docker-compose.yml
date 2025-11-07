@@ -1,0 +1,39 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    working_dir: /workspace
+    command: sh -c "sleep infinity"
+    ports:
+      - "3000:3000"
+    environment:
+      - PORT=3000
+      - NODE_ENV=development
+      - DATABASE_URL=postgresql://postgres:postgres@db:5432/appdb
+      - PRISMA_SKIP_POSTINSTALL_GENERATE=true
+      - NODE_OPTIONS=--max-old-space-size=2048
+    volumes:
+      - ..:/workspace:cached
+      - app_node_modules:/workspace/node_modules
+    depends_on:
+      - db
+    mem_limit: 2g
+
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=appdb
+    ports:
+      - "5433:5432"
+    volumes:
+      - db_data:/var/lib/postgresql/data
+
+volumes:
+  app_node_modules:
+  db_data:
+
+

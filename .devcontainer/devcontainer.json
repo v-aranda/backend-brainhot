@@ -1,0 +1,25 @@
+{
+  "name": "Proint API Dev",
+  "dockerComposeFile": "docker-compose.yml",
+  "service": "app",
+  "workspaceFolder": "/workspace",
+  "forwardPorts": [3000, 5432],
+  "shutdownAction": "stopCompose",
+  "postCreateCommand": "npm ci || npm install",
+  "postStartCommand": "npx prisma generate && npm run dev",
+  "remoteEnv": {
+    "PORT": "3000",
+    "NODE_ENV": "development",
+    "DATABASE_URL": "postgresql://postgres:postgres@db:5432/appdb"
+  },
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "dbaeumer.vscode-eslint",
+        "esbenp.prettier-vscode"
+      ]
+    }
+  }
+}
+
+
