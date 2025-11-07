@@ -32,6 +32,7 @@ COPY package.json package-lock.json* ./
 RUN npm install
 RUN npm install -g typescript 
 COPY . .
+RUN npx prisma generate
 RUN tsc --project tsconfig.prod.json
 
 # ---- VERSÃO OTIMIZADA RECOMENDADA ----
@@ -44,13 +45,16 @@ ENV NODE_ENV=production
 COPY --from=builder /workspace/package.json ./
 COPY --from=builder /workspace/package-lock.json* ./
 
-# 2. Instalar APENAS as dependências de produção
+# 2. Instalar APENAS as dependências de produção (agora inclui o 'prisma')
 RUN npm install --production
 
 # 3. Copiar o código transpilado
 COPY --from=builder /workspace/dist ./dist
 
+# 4. Copiar o schema do prisma para o container de produção
+COPY --from=builder /workspace/prisma ./prisma
+
 EXPOSE 3000
-CMD ["node", "dist/main/server.js"]
 
-
+# 5. ALTERE O CMD PARA EXECUTAR AS MIGRAÇÕES ANTES DE INICIAR
+CMD ["sh", "-c", "npx prisma migrate deploy && node dist/main/server.js"]
