@@ -1,0 +1,40 @@
+{
+  "name": "proint-1-api",
+  "version": "1.0.0",
+  "description": "API Node.js em Clean Architecture com testes de integração (Jest)",
+  "main": "dist/main/server.js",
+  "types": "dist/types.d.ts",
+  "scripts": {
+    "dev": "ts-node-dev --respawn --transpile-only src/main/server.ts",
+    "build": "tsc",
+    "start": "node dist/main/server.js",
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "prisma": "prisma",
+    "db:generate": "prisma generate",
+    "db:migrate": "prisma migrate dev --name init"
+  },
+  "dependencies": {
+    "@prisma/client": "^6.19.0",
+    "@types/jsonwebtoken": "^9.0.10",
+    "bcryptjs": "^3.0.3",
+    "cors": "^2.8.5",
+    "dotenv": "^17.2.3",
+    "express": "^5.1.0",
+    "jsonwebtoken": "^9.0.2",
+    "swagger-jsdoc": "^6.2.8",
+    "swagger-ui-express": "^5.0.1"
+  },
+  "devDependencies": {
+    "@types/cors": "^2.8.19",
+    "@types/express": "^5.0.5",
+    "@types/jest": "^30.0.0",
+    "@types/supertest": "^6.0.3",
+    "jest": "^30.2.0",
+    "prisma": "^6.19.0",
+    "supertest": "^7.1.4",
+    "ts-jest": "^29.4.5",
+    "ts-node-dev": "^2.0.0",
+    "typescript": "^5.9.3"
+  }
+}
