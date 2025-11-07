@@ -54,6 +54,8 @@ COPY --from=builder /workspace/dist ./dist
 # 4. Copiar o schema do prisma para o container de produção
 COPY --from=builder /workspace/prisma ./prisma
 
+RUN npx prisma generate
+
 EXPOSE 3000
 
 # 5. ALTERE O CMD PARA EXECUTAR AS MIGRAÇÕES ANTES DE INICIAR
