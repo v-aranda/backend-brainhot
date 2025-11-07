@@ -34,15 +34,22 @@ RUN npm install -g typescript
 COPY . .
 RUN tsc --project tsconfig.prod.json
 
-# Production stage: minimal image containing only built artifacts and production deps
+# ---- VERSÃO OTIMIZADA RECOMENDADA ----
 FROM node:20-bookworm AS prod
 WORKDIR /workspace
-# copy built files and node_modules from builder
-COPY --from=builder /workspace/dist ./dist
-COPY --from=builder /workspace/node_modules ./node_modules
-# CORREÇÃO: Copia o package.json do estágio 'builder'
-COPY --from=builder /workspace/package.json ./ 
+
 ENV NODE_ENV=production
+
+# 1. Copiar apenas o package.json e o lockfile
+COPY --from=builder /workspace/package.json ./
+COPY --from=builder /workspace/package-lock.json* ./
+
+# 2. Instalar APENAS as dependências de produção
+RUN npm install --production
+
+# 3. Copiar o código transpilado
+COPY --from=builder /workspace/dist ./dist
+
 EXPOSE 3000
 CMD ["node", "dist/main/server.js"]
 
