@@ -1,6 +1,7 @@
 {
   "name": "Proint API Dev",
   "dockerComposeFile": "docker-compose.yml",
+  "runServices": ["app", "db"],
   "service": "app",
   "workspaceFolder": "/workspace",
   "forwardPorts": [3000, 5432],
