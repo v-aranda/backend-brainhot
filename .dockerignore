@@ -1,0 +1,15 @@
+# Ignorar dependências locais
+node_modules
+
+# Ignorar logs e ficheiros do sistema
+npm-debug.log
+.DS_Store
+
+# Ignorar pasta do dev container (opcional, mas boa prática)
+.devcontainer
+
+# Ignorar ficheiros .env locais
+.env
+
+# Ignorar a pasta de build (dist)
+dist
