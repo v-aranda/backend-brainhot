@@ -11,7 +11,8 @@
   "remoteEnv": {
     "PORT": "3000",
     "NODE_ENV": "development",
-    "DATABASE_URL": "postgresql://postgres:postgres@db:5432/appdb"
+    "DATABASE_URL": "postgresql://postgres:postgres@db:5432/appdb",
+    "JWT_SECRET": "7e5bffe40655205ea8fa81e9c155c9abf125115de7deef109ae6972247e3f37533934c474ca816fdab432c2d8899a7b805499b867754dcf83a8d5beb6a7fcc02"
   },
   "customizations": {
     "vscode": {

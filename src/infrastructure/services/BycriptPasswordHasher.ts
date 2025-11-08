@@ -14,8 +14,8 @@ export class BcryptPasswordHasher implements PasswordHasher {
     return hash;
   }
 
-  // Futuramente, para o login:
-  // async compare(password: string, hash: string): Promise<boolean> {
-  //   return bcrypt.compare(password, hash);
-  // }
+  async compare(password: string, hashedPassword: string): Promise<boolean> {
+    const isMatch = await bcrypt.compare(password, hashedPassword);
+    return isMatch;
+  }
 }
