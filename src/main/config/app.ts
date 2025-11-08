@@ -1,4 +1,4 @@
-import express from "express";
+import express, { Request, Response } from "express";
 import cors from 'cors';
 import swaggerUi from 'swagger-ui-express';
 import { swaggerSpec } from '../docs/openapi';
@@ -13,7 +13,7 @@ export const createApp = () => {
   app.use(express.json());
   app.use(cors());
 
-  app.get("/health", (_req, res) => res.json({ status: "ok" }));
+  app.get("/health", (_req: Request, res: Response) => res.json({ status: "ok" }));
   app.use('/docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
   
