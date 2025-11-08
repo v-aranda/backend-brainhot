@@ -5,6 +5,7 @@ import { swaggerSpec } from '../docs/openapi';
 
 //Rotas
 import { userRouter } from '../../interface/http/routes/userRouter';
+import { authRouter } from '../../interface/http/routes/AuthRouter';
 
 
 
@@ -18,6 +19,7 @@ export const createApp = () => {
 
   
   app.use('/api', userRouter);
+  app.use('/api', authRouter);
 
   return app;
 };

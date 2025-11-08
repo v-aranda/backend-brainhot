@@ -1,0 +1,48 @@
+services:
+  app:
+    build:
+      context: .. # Aponta para a raiz do projeto
+      dockerfile: .docker/Dockerfile # Caminho para o Dockerfile
+      target: dev # Usa o estágio 'dev'
+    working_dir: /workspace
+    # Este comando garante que o script é executável (para Windows)
+    # e depois o executa como ponto de entrada.
+    command: sh -c "chmod +x .docker/entrypoint.dev.sh && .docker/entrypoint.dev.sh"
+    ports:
+      - "3000:3000"
+    environment:
+      - PORT=3000
+      - NODE_ENV=development
+      - DATABASE_URL=postgresql://postgres:postgres@db:5432/appdb
+      - PRISMA_SKIP_POSTINSTALL_GENERATE=true
+      - JWT_SECRET="7e5bffe40655205ea8fa81e9c155c9abf125115de7deef109ae6972247e3f37533934c474ca816fdab432c2d8899a7b805499b867754dcf83a8d5beb6a7fcc02"
+    volumes:
+      # Sincroniza todo o seu código, exceto node_modules
+      - ..:/workspace:cached
+      # Volume nomeado para persistir node_modules
+      - app_node_modules:/workspace/node_modules
+      # Mapeia o entrypoint para dentro do contêiner
+      - ./entrypoint.dev.sh:/workspace/.docker/entrypoint.dev.sh
+    depends_on:
+      - db
+    mem_limit: 2g
+
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      # Este é o banco de DADOS de DESENVOLVIMENTO
+      - POSTGRES_DB=appdb
+    ports:
+      - "5433:5432"
+    volumes:
+      # Volume nomeado para persistir os dados do banco
+      - db_data:/var/lib/postgresql/data
+      # Script para criar o banco de TESTE automaticamente
+      - ./postgres/init-db.sh:/docker-entrypoint-initdb.d/init-db.sh
+
+volumes:
+  app_node_modules:
+  db_data:
