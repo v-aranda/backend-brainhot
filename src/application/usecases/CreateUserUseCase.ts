@@ -1,20 +1,38 @@
-import { randomUUID } from "crypto";
-import { User } from "../../domain/entities/User";
-import { UserRepository } from "../../domain/repositories/UserRepository";
+import { User } from '../../domain/entities/User';
+import { UserRepository } from '../../domain/repositories/UserRepository';
+import { CreateUserDTO } from '../../domain/dto/UserDTO';
+import { PasswordHasher } from '../services/PasswordHasher';
 
 export class CreateUserUseCase {
-  constructor(private readonly userRepository: UserRepository) {}
+  constructor(
+    private userRepository: UserRepository,
+    private passwordHasher: PasswordHasher
+  ) {}
 
-  async execute(input: { name: string; email: string }): Promise<User> {
-    const existing = await this.userRepository.findByEmail(input.email);
-    if (existing) {
-      throw new Error("E-mail já cadastrado");
+  async execute(data: CreateUserDTO): Promise<User> {
+    
+    // 1. Verificar se o usuário já existe
+    const userAlreadyExists = await this.userRepository.findByEmail(data.email);
+
+    if (userAlreadyExists) {
+      throw new Error('User with this email already exists.');
     }
-    const user = new User({ id: randomUUID(), name: input.name, email: input.email });
-    await this.userRepository.create(user);
+
+    // 2. Hash da Senha
+    const passwordhash = await this.passwordHasher.hash(data.password);
+
+    // 3. Criar a Entidade de Domínio
+    const user = User.create({
+      name: data.name,
+      email: data.email,
+      passwordhash: passwordhash,
+    });
+
+    // 4. Salvar no repositório
+    // O Use Case manda o repositório salvar a entidade no banco de dados.
+    await this.userRepository.save(user);
+
+    // 5. Retornar a entidade criada
     return user;
   }
 }
-
-
-
