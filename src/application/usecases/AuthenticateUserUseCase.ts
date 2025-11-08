@@ -8,9 +8,9 @@ export class AuthenticateUserUseCase {
     private userRepository: UserRepository,
     private passwordHasher: PasswordHasher,
     private tokenGenerator: TokenGenerator
-  ) {}
+  ) { }
 
-    async execute(loginDTO: AuthDTO): Promise<string> {
+  async execute(loginDTO: AuthDTO): Promise<string> {
     const user = await this.userRepository.findByEmail(loginDTO.email);
     if (!user) throw new Error("Usuário ou senha inválidos");
 
@@ -20,7 +20,7 @@ export class AuthenticateUserUseCase {
     );
     if (!isPasswordValid) throw new Error("Usuário ou senha inválidos");
 
-    const token = this.tokenGenerator.generate({ userId: user.id });
+    const token = this.tokenGenerator.generate({ id: user.id });
     return token;
   }
 }

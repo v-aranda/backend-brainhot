@@ -1,6 +1,5 @@
 import { Router } from 'express';
-
-// 1. Importe TUDO que precisa ser "construído"
+import { env } from 'process'; // <-- ADICIONADO
 
 // Camada de Aplicação (Lógica)
 import { CreateUserUseCase } from '../../../application/usecases/CreateUserUseCase';
@@ -13,6 +12,10 @@ import { BcryptPasswordHasher } from '../../../infrastructure/services/BycriptPa
 
 // Camada de Interface (Controller)
 import { UserController } from '../controllers/UserContoller';
+
+// --- ADICIONAR IMPORTS DE AUTENTICAÇÃO ---
+import { createAuthMiddleware } from '../middleware/authMiddleware';
+import { FastJwtTokenGenerator } from '../../../infrastructure/services/FastJwtGenerator';
 
 // --- A MÁGICA DA INJEÇÃO DE DEPENDÊNCIA ---
 
@@ -35,17 +38,30 @@ const userController = new UserController(
   findAllUsersUseCase
 );
 
+// --- 5. INSTANCIAR O MIDDLEWARE DE AUTENTICAÇÃO ---
+const jwtSecret = env.JWT_SECRET;
+if (!jwtSecret) {
+  throw new Error('JWT_SECRET is not defined in environment variables.');
+}
+const tokenGenerator = new FastJwtTokenGenerator(jwtSecret, '1h');
+const auth = createAuthMiddleware(tokenGenerator, userRepository);
+// --------------------------------------------------
+
 // --- CONFIGURAÇÃO DAS ROTAS ---
 
 const userRouter = Router();
 
-// 5. Conecte o método do controller à rota
+// 6. Conecte o método do controller à rota
 // Usamos .bind() para garantir que o 'this' do controller
 // funcione corretamente quando o Express o chamar.
+
+// ROTA PÚBLICA
 userRouter.post('/users', userController.handleCreateUser.bind(userController));
-userRouter.get('/users/:id', userController.handleGetUserByID.bind(userController));
-userRouter.get('/users', userController.handleGetAllUsers.bind(userController));
+
+// ROTAS PROTEGIDAS (agora usam o 'auth')
+userRouter.get('/users/:id', auth, userController.handleGetUserByID.bind(userController));
+userRouter.get('/users', auth, userController.handleGetAllUsers.bind(userController));
 
 
-// 6. Exporte o roteador pronto
+// 7. Exporte o roteador pronto
 export { userRouter };
