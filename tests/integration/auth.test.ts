@@ -1,56 +1,80 @@
 import supertest from "supertest";
-// Importa a função que cria seu app
 import { createApp } from "../../src/main/config/app";
-// Importa o cliente Prisma para podermos limpar o banco
 import { PrismaClient } from "@prisma/client";
 import * as bcrypt from 'bcrypt';
 
-
-// 1. Crie uma instância do app e do prisma
 const app = createApp();
 const prisma = new PrismaClient();
-const request = supertest(app); // O "agente" que faz as requisições
+const request = supertest(app);
 
-/**
- * --- Limpeza do Banco de Dados ---
- * * Isso é CRUCIAL. Antes de cada teste, limpamos a tabela
- * para que um teste não interfira no outro.
- */
 beforeEach(async () => {
-  // Use 'deleteMany' para limpar a tabela de usuários.
-  // Em um projeto maior, você usaria 'prisma.$transaction'
-  // para limpar MÚLTIPLAS tabelas.
   await prisma.user.deleteMany();
 });
 
-/**
- * --- Desconexão ---
- * Após TODOS os testes rodarem, fechamos a conexão com o banco.
- */
 afterAll(async () => {
   await prisma.$disconnect();
 });
 
-describe("Login do usuário", () => {
+describe("Autenticação de Usuário", () => {
+  
   it("Deve autenticar um usuário com credenciais válidas", async () => {
-    // Primeiro, criamos um usuário diretamente no banco
+    // --- Arrange ---
     const passwordHash = await bcrypt.hash("password123", 10);
-
-    // 2. Crie o usuário com o campo CORRETO
     await prisma.user.create({
       data: {
         name: "Test User",
         email: "user@example.com",
-        passwordHash: passwordHash, // <-- CORRETO
+        passwordHash: passwordHash,
       },
     });
-    // Agora, tentamos autenticar com as credenciais corretas
-    const response = await request.post("/api/auth").send({
+
+    // --- Act ---
+    const response = await request.post("/api/auth").send({ // Rota corrigida
       email: "user@example.com",
       password: "password123",
     });
 
+    // --- Assert ---
     expect(response.status).toBe(200);
     expect(response.body).toHaveProperty("token");
+  });
+
+  it("Deve validar uma sessão com um token válido", async () => {
+    // --- Arrange ---
+    // 1. Criar usuário
+    const passwordHash = await bcrypt.hash("password123", 10);
+    const user = await prisma.user.create({
+      data: {
+        name: "Validate User",
+        email: "validate@example.com",
+        passwordHash: passwordHash,
+      },
+    });
+
+    // 2. Fazer login para obter o token
+    const loginResponse = await request.post("/api/auth").send({
+      email: "validate@example.com",
+      password: "password123",
+    });
+    const token = loginResponse.body.token;
+
+    // --- Act ---
+    // 3. Tentar validar a sessão
+    const response = await request.get("/api/sessions/validate")
+      .set('Authorization', `Bearer ${token}`); // Envia o token
+
+    // --- Assert ---
+    expect(response.status).toBe(200);
+    expect(response.body.id).toBe(user.id);
+    expect(response.body.email).toBe(user.email);
+  });
+
+  it("Deve retornar 401 ao tentar validar uma sessão sem token", async () => {
+    // --- Act ---
+    const response = await request.get("/api/sessions/validate");
+
+    // --- Assert ---
+    expect(response.status).toBe(401);
+    expect(response.body.message).toBe('Token not provided.');
   });
 });

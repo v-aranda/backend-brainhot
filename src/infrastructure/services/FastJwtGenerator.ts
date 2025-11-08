@@ -1,9 +1,9 @@
-// 1. Importe o 'createSigner' e 'createVerifier'
+// 1. Remova 'Signer' e 'Verifier' da importação
 import { createSigner, createVerifier } from 'fast-jwt';
-import { TokenGenerator } from '../../application/services/TokenGenerator';
+import { TokenGenerator, TokenPayload } from '../../application/services/TokenGenerator';
 
 export class FastJwtTokenGenerator implements TokenGenerator {
-  // 2. Crie as instâncias do assinador e verificador
+  // 2. Remova as anotações de tipo daqui...
   private readonly signer;
   private readonly verifier;
 
@@ -12,34 +12,27 @@ export class FastJwtTokenGenerator implements TokenGenerator {
       throw new Error('JWT_SECRET is not defined in environment variables.');
     }
 
-    // 3. Crie o assinador com as opções
+    // ... e o TypeScript vai inferir os tipos corretos
+    // a partir do retorno destas funções.
     this.signer = createSigner({
       key: secretKey,
       expiresIn: expiresIn,
     });
 
-    // 4. Crie o verificador
     this.verifier = createVerifier({
       key: secretKey,
     });
   }
 
-  // A API da fast-jwt é síncrona, então podemos
-  // remover o 'async' da assinatura do método na interface
-  // ou apenas envolvê-la em uma Promise resolvida.
-  // Vamos manter a interface 'async' para consistência.
-  
   generate(payload: object): string {
     const token = this.signer(payload);
     return token;
   }
 
-  // --- CORRIGIDO ---
-  // 1. Removido 'async' e 'Promise'
-  verify(token: string): object | null {
+  verify(token: string): TokenPayload | null {
     try {
-      const payload = this.verifier(token);
-      return payload as object;
+      const payload = this.verifier(token) as TokenPayload;
+      return payload;
     } catch (error) {
       return null;
     }

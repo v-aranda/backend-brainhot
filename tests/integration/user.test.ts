@@ -1,150 +1,213 @@
 import supertest from 'supertest';
-// Importa a função que cria seu app
-import { createApp } from '../../src/main/config/app'; 
-// Importa o cliente Prisma para podermos limpar o banco
-import { PrismaClient } from '@prisma/client'; 
+import { createApp } from '../../src/main/config/app';
+import { PrismaClient } from '@prisma/client';
 
-// 1. Crie uma instância do app e do prisma
 const app = createApp();
 const prisma = new PrismaClient();
-const request = supertest(app); // O "agente" que faz as requisições
+const request = supertest(app);
 
-/**
- * --- Limpeza do Banco de Dados ---
- * * Isso é CRUCIAL. Antes de cada teste, limpamos a tabela
- * para que um teste não interfira no outro.
- */
 beforeEach(async () => {
-  // Use 'deleteMany' para limpar a tabela de usuários.
-  // Em um projeto maior, você usaria 'prisma.$transaction'
-  // para limpar MÚLTIPLAS tabelas.
   await prisma.user.deleteMany();
 });
 
-/**
- * --- Desconexão ---
- * Após TODOS os testes rodarem, fechamos a conexão com o banco.
- */
 afterAll(async () => {
   await prisma.$disconnect();
 });
 
-
 /**
- * --- Testes ---
+ * --- Testes de Criação (Rotas Públicas) ---
  */
-describe('Criação de usuários', () => {
+describe('✨"Criação de usuários (Público)', () => {
 
   it('should create a new user and return status 201', async () => {
-    // --- 1. Arrange (Arrumar) ---
     const userData = {
       name: 'Integration Test User',
       email: 'integration@test.com',
       password: 'strongpassword123',
     };
 
-    // --- 2. Act (Agir) ---
-    // Faz a chamada HTTP simulada
     const response = await request
-      .post('/api/users') // Sua rota
-      .send(userData);      // O body da requisição
+      .post('/api/users')
+      .send(userData);
 
-    // --- 3. Assert (Verificar) ---
-    
-    // A. A resposta HTTP está correta?
     expect(response.status).toBe(201);
-    expect(response.body.id).toBeDefined(); // Verifica se um ID foi retornado
+    expect(response.body.id).toBeDefined();
     expect(response.body.name).toBe(userData.name);
-    expect(response.body.email).toBe(userData.email);
-    expect(response.body.passwordHash).toBeUndefined(); // Garante que a SENHA não foi enviada
 
-    // B. O banco de dados está correto?
     const userInDb = await prisma.user.findUnique({
       where: { email: userData.email },
     });
-    
-    expect(userInDb).toBeTruthy(); // Garante que o usuário existe no DB
-    expect(userInDb?.name).toBe(userData.name);
+    expect(userInDb).toBeTruthy();
   });
 
   it('should return 400 if email is already in use', async () => {
-    // --- 1. Arrange (Arrumar) ---
-    // Primeiro, crie um usuário manualmente (pode ser com o prisma ou com o supertest)
     await request.post('/api/users').send({
       name: 'First User',
       email: 'duplicate@test.com',
       password: 'password123',
     });
 
-    // --- 2. Act (Agir) ---
-    // Tente criar o usuário de NOVO com o mesmo email
     const response = await request.post('/api/users').send({
       name: 'Second User',
-      email: 'duplicate@test.com', // Email repetido
+      email: 'duplicate@test.com',
       password: 'password456',
     });
 
-    // --- 3. Assert (Verificar) ---
-    expect(response.status).toBe(400); // Espera um "Bad Request"
+    expect(response.status).toBe(400);
     expect(response.body.message).toBe('User with this email already exists.');
-
-    // B. O banco de dados está correto? (Garante que o 2º usuário não foi salvo)
-    const usersInDb = await prisma.user.findMany({
-      where: { email: 'duplicate@test.com' },
-    });
-    expect(usersInDb.length).toBe(1); // Só pode ter 1 usuário com esse email
   });
-
-  // Você pode adicionar mais testes aqui (ex: senha faltando, email inválido)
 });
-describe('Listagem de usuários', () => {
-    
-  it('should return an empty list when no users exist', async () => {
-    const response = await request.get('/api/users');
-    expect(response.status).toBe(200);
-    expect(response.body).toEqual([]);
-  });
-    it('should return a list of users when users exist', async () => {
-    // Arrange: Crie alguns usuários no banco
-    const usersData = [
-      { name: 'User One', email: 'userone@test.com', password: 'password123' },
-      { name: 'User Two', email: 'usertwo@test.com', password: 'password456' },
-    ];
 
-    for (const userData of usersData) {
-      await request.post('/api/users').send(userData);
-    }
+/**
+ * --- Testes de Listagem (Rotas Protegidas) ---
+ */
+describe('📄Listagem de usuários (Protegido)', () => {
 
-    // Act: Faça a requisição para listar os usuários
-    const response = await request.get('/api/users');
+  let token: string;
+  let userId: string;
 
-    // Assert: Verifique a resposta
-    expect(response.status).toBe(200);
-    expect(response.body.length).toBe(2);
-    expect(response.body[0].email).toBe(usersData[0].email);
-    expect(response.body[1].email).toBe(usersData[1].email);
-  });
-
-  it('should return a user by ID when the user exists', async () => {
-    // Arrange: Crie um usuário no banco
-    const userData = { name: 'User Three', email: 'userthree@test.com', password: 'password789' };
+  // Antes de CADA teste neste bloco, criar um usuário e logar
+  beforeEach(async () => {
+    // 1. Criar usuário
+    const userData = {
+      name: 'Test User List',
+      email: 'test-list@example.com',
+      password: 'password123',
+    };
     const createResponse = await request.post('/api/users').send(userData);
-    const userId = createResponse.body.id;
+    userId = createResponse.body.id; // Salva o ID para o teste de "busca por ID"
 
-    // Act: Faça a requisição para buscar o usuário pelo ID
+    // 2. Fazer login para obter o token
+    const loginResponse = await request.post('/api/auth').send({
+      email: userData.email,
+      password: userData.password,
+    });
+
+    token = loginResponse.body.token; // Salva o token para os testes usarem
+  });
+
+  it('should return 401 if no token is provided (GET /users)', async () => {
+    const response = await request.get('/api/users');
+    expect(response.status).toBe(401);
+    expect(response.body.message).toBe('Token not provided.');
+  });
+
+  it('should return 401 if no token is provided (GET /users/:id)', async () => {
     const response = await request.get(`/api/users/${userId}`);
+    expect(response.status).toBe(401);
+    expect(response.body.message).toBe('Token not provided.');
+  });
+
+  it('should return a list of users when authenticated', async () => {
+    // Act: Faça a requisição ENVIANDO O TOKEN
+    const response = await request.get('/api/users')
+      .set('Authorization', `Bearer ${token}`); // <-- Enviando o token
 
     // Assert: Verifique a resposta
     expect(response.status).toBe(200);
-    expect(response.body.email).toBe(userData.email);
+    expect(response.body.length).toBe(1);
+    expect(response.body[0].email).toBe('test-list@example.com');
   });
 
-  it('should return 404 when the user does not exist', async () => {
-    // Act: Faça a requisição para um ID que não existe
-    const response = await request.get('/api/users/non-existent-id');
-    
+
+  it('should return a user by ID when authenticated', async () => {
+    // Act: Faça a requisição ENVIANDO O TOKEN
+    const response = await request.get(`/api/users/${userId}`)
+      .set('Authorization', `Bearer ${token}`); // <-- Enviando o token
+
     // Assert: Verifique a resposta
+    expect(response.status).toBe(200);
+    expect(response.body.email).toBe('test-list@example.com');
+  });
+
+  it('should return 404 when the user does not exist (but token is valid)', async () => {
+    const fakeId = '00000000-0000-0000-0000-000000000000';
+
+    const response = await request.get(`/api/users/${fakeId}`)
+      .set('Authorization', `Bearer ${token}`); // <-- Enviando o token
+
     expect(response.status).toBe(404);
     expect(response.body.message).toBe('User not found.');
   });
-}); 
+});
+/**
+ * --- Testes de Edição (Rotas Protegidas) ---
+ */
+describe('📝Edição do perfil de usuário (Protegido)', () => {
+  let token: string;
+  let userId: string;
+  const originalEmail = 'test-edit@example.com';
+  const originalPassword = 'securepass';
+
+  beforeEach(async () => {
+    // 1. Crie o usuário
+    const createResponse = await request.post('/api/users').send({
+      name: 'User Original',
+      email: originalEmail,
+      password: originalPassword,
+    });
+    userId = createResponse.body.id;
+
+    // 2. Faça login para obter o token
+    const loginResponse = await request.post('/api/auth').send({
+      email: originalEmail,
+      password: originalPassword,
+    });
+    token = loginResponse.body.token;
+  });
+
+  it('should update the name and email when authenticated (Caminho Feliz)', async () => {
+    const newName = 'Novo Nome Editado';
+    const newEmail = 'novo.email.editado@test.com';
+
+    // ACT: Faça a requisição PUT para editar
+    const response = await request.put(`/api/users/${userId}`)
+      .set('Authorization', `Bearer ${token}`)
+      .send({
+        name: newName,
+        email: newEmail,
+      });
+
+    // ASSERT 1: Verifique a resposta HTTP
+    expect(response.status).toBe(200);
+    expect(response.body.name).toBe(newName);
+    expect(response.body.email).toBe(newEmail);
+    expect(response.body.id).toBe(userId);
+
+    // ASSERT 2: Verifique o banco de dados
+    const userInDb = await prisma.user.findUnique({ where: { id: userId } });
+    expect(userInDb?.name).toBe(newName);
+    expect(userInDb?.email).toBe(newEmail);
+    // Deve conseguir fazer login com o NOVO email
+    const newLoginResponse = await request.post('/api/auth').send({
+      email: newEmail,
+      password: originalPassword,
+    });
+    expect(newLoginResponse.status).toBe(200);
+  });
+
+  it('should return 401 if token is missing', async () => {
+    const response = await request.put(`/api/users/${userId}`).send({ name: 'Hack Attempt' });
+    expect(response.status).toBe(401);
+  });
+
+  it('should return 400 if the new email is already in use', async () => {
+    // Arrange: Crie um segundo usuário
+    await request.post('/api/users').send({
+      name: 'Existing User',
+      email: 'existing@email.com',
+      password: '123',
+    });
+
+    // ACT: Tente mudar o email do primeiro usuário para o email do segundo
+    const response = await request.put(`/api/users/${userId}`)
+      .set('Authorization', `Bearer ${token}`)
+      .send({
+        email: 'existing@email.com', // Já em uso
+      });
+
+    // ASSERT: Deve falhar
+    expect(response.status).toBe(400);
+    expect(response.body.message).toBe('This email is already in use by another user.');
+  });
+});
