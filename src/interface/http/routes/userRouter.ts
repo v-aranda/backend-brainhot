@@ -1,10 +1,12 @@
 import { Router } from 'express';
-import { env } from 'process'; // <-- ADICIONADO
+import { env } from 'process';
 
 // Camada de Aplicação (Lógica)
 import { CreateUserUseCase } from '../../../application/usecases/CreateUserUseCase';
 import { FindUserByIdUseCase } from '../../../application/usecases/FindUserByIdUseCase';
 import { FindAllUsersUseCase } from '../../../application/usecases/FindAllUsersUseCase';
+// --- NOVO: Edição ---
+import { EditUserUseCase } from '../../../application/usecases/EditUserUseCase'; 
 
 // Camada de Infraestrutura (Implementações Concretas)
 import { PrismaUserRepository } from '../../../infrastructure/repositories/PrismaUserRepository';
@@ -13,29 +15,29 @@ import { BcryptPasswordHasher } from '../../../infrastructure/services/BycriptPa
 // Camada de Interface (Controller)
 import { UserController } from '../controllers/UserContoller';
 
-// --- ADICIONAR IMPORTS DE AUTENTICAÇÃO ---
+// Imports para o Middleware de Autenticação
 import { createAuthMiddleware } from '../middleware/authMiddleware';
 import { FastJwtTokenGenerator } from '../../../infrastructure/services/FastJwtGenerator';
 
 // --- A MÁGICA DA INJEÇÃO DE DEPENDÊNCIA ---
 
 // 2. Crie as instâncias concretas (as "ferramentas")
-const userRepository = new PrismaUserRepository(); // <-- Usa Prisma
-const passwordHasher = new BcryptPasswordHasher(); // <-- Usa Bcrypt
+const userRepository = new PrismaUserRepository(); 
+const passwordHasher = new BcryptPasswordHasher(); 
 
-// 3. Crie o Caso de Uso e injete as ferramentas nele
-const createUserUseCase = new CreateUserUseCase(
-  userRepository,
-  passwordHasher
-);
+// 3. Crie os Casos de Uso e injete as ferramentas
+const createUserUseCase = new CreateUserUseCase(userRepository, passwordHasher);
 const findUserByIdUseCase = new FindUserByIdUseCase(userRepository);
 const findAllUsersUseCase = new FindAllUsersUseCase(userRepository);
+// --- NOVO: Instancie o Use Case de Edição ---
+const editUserUseCase = new EditUserUseCase(userRepository); 
 
-// 4. Crie o Controller e injete o Caso de Uso nele
+// 4. Crie o Controller e injete TODOS os Casos de Uso
 const userController = new UserController(
   createUserUseCase,
   findUserByIdUseCase,
-  findAllUsersUseCase
+  findAllUsersUseCase,
+  editUserUseCase // <--- NOVO: Injeção do EditUserUseCase
 );
 
 // --- 5. INSTANCIAR O MIDDLEWARE DE AUTENTICAÇÃO ---
@@ -51,17 +53,16 @@ const auth = createAuthMiddleware(tokenGenerator, userRepository);
 
 const userRouter = Router();
 
-// 6. Conecte o método do controller à rota
-// Usamos .bind() para garantir que o 'this' do controller
-// funcione corretamente quando o Express o chamar.
-
-// ROTA PÚBLICA
+// ROTA PÚBLICA (Criação)
 userRouter.post('/users', userController.handleCreateUser.bind(userController));
 
-// ROTAS PROTEGIDAS (agora usam o 'auth')
+// ROTAS PROTEGIDAS (Listagem e Busca)
 userRouter.get('/users/:id', auth, userController.handleGetUserByID.bind(userController));
 userRouter.get('/users', auth, userController.handleGetAllUsers.bind(userController));
 
+// --- ROTA PROTEGIDA DE EDIÇÃO ---
+userRouter.put('/users/:id', auth, userController.handleEdit.bind(userController)); 
 
-// 7. Exporte o roteador pronto
+
+// 6. Exporte o roteador pronto
 export { userRouter };

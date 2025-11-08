@@ -23,7 +23,7 @@ export const swaggerSpec = swaggerJSDoc({
         }
       },
       schemas: {
-        // ... (Schemas CreateUserDTO, LoginDTO, UserResponse, TokenResponse, ErrorResponse estão aqui, sem alterações)
+        // Esquema de Dados para Criação
         CreateUserDTO: {
           type: "object",
           properties: {
@@ -33,6 +33,20 @@ export const swaggerSpec = swaggerJSDoc({
           },
           required: ["name", "email", "password"],
         },
+        
+        // --- NOVO: Esquema de Edição (Campos opcionais) ---
+        EditUserDTO: {
+          type: "object",
+          properties: {
+            name: { type: "string", example: "Jane Doe" },
+            email: { type: "string", format: "email", example: "jane.doe.new@example.com" },
+          },
+          // Pelo menos um campo deve ser fornecido, mas o Swagger 
+          // não tem 'required if present'. Deixamos opcional.
+        },
+        // --- FIM NOVO ---
+        
+        // Esquema de Login
         LoginDTO: {
           type: "object",
           properties: {
@@ -41,6 +55,8 @@ export const swaggerSpec = swaggerJSDoc({
           },
           required: ["email", "password"],
         },
+
+        // Resposta do Usuário
         UserResponse: {
           type: "object",
           properties: {
@@ -50,12 +66,16 @@ export const swaggerSpec = swaggerJSDoc({
             createdAt: { type: "string", format: "date-time", example: "2025-11-08T00:30:00Z" },
           },
         },
+        
+        // Resposta do Token
         TokenResponse: {
           type: "object",
           properties: {
             token: { type: "string", example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjAwZTh..." },
           },
         },
+
+        // Resposta de Erro
         ErrorResponse: {
           type: "object",
           properties: {
@@ -65,15 +85,15 @@ export const swaggerSpec = swaggerJSDoc({
       },
     },
     
-    // --- PATHS (Rotas Corrigidas) ---
+    // --- PATHS (Rotas) ---
     paths: {
       // Health Check
       "/health": {
         get: { tags: ["Health"], summary: "Health check", responses: { "200": { description: "OK" } } },
       },
       
-      // Rotas de Autenticação (Login e Validação)
-      "/api/auth": { // PREFIXO CORRIGIDO: Removido /v1
+      // Login
+      "/api/auth": {
         post: {
           tags: ["Auth"],
           summary: "Login de Usuário",
@@ -86,7 +106,8 @@ export const swaggerSpec = swaggerJSDoc({
         },
       },
 
-      "/api/sessions/validate": { // PREFIXO CORRIGIDO: Removido /v1
+      // Validação
+      "/api/sessions/validate": {
         get: {
           tags: ["Auth"],
           summary: "Validação de Sessão",
@@ -99,8 +120,8 @@ export const swaggerSpec = swaggerJSDoc({
         },
       },
 
-      // Rotas de Usuário
-      "/api/users": { // PREFIXO CORRIGIDO: Removido /v1
+      // Rotas de Usuário (CRUD)
+      "/api/users": {
         post: {
           tags: ["Users"],
           summary: "Cria um novo usuário (Registro)",
@@ -125,15 +146,14 @@ export const swaggerSpec = swaggerJSDoc({
         },
       },
 
-      "/api/users/{id}": { // PREFIXO CORRIGIDO: Removido /v1
+      "/api/users/{id}": {
+        // GET (Busca por ID)
         get: {
           tags: ["Users"],
           summary: "Busca um usuário pelo ID",
           description: "Retorna um usuário específico com base no seu ID. Requer autenticação.",
           security: [{ BearerAuth: [] }],
-          parameters: [
-            { name: "id", in: "path", description: "ID do usuário a ser buscado", required: true, schema: { type: "string", format: "uuid" } },
-          ],
+          parameters: [{ name: "id", in: "path", description: "ID do usuário a ser buscado", required: true, schema: { type: "string", format: "uuid" } }],
           responses: {
             "200": { description: "Usuário encontrado com sucesso.", content: { "application/json": { schema: { $ref: "#/components/schemas/UserResponse" } } } },
             "400": { description: "ID do usuário é inválido.", content: { "application/json": { schema: { $ref: "#/components/schemas/ErrorResponse" } } } },
@@ -141,6 +161,24 @@ export const swaggerSpec = swaggerJSDoc({
             "404": { description: "Usuário não encontrado.", content: { "application/json": { schema: { $ref: "#/components/schemas/ErrorResponse" } } } },
           },
         },
+        
+        // --- NOVO: PUT (Edição) ---
+        put: {
+          tags: ["Users"],
+          summary: "Edita o perfil do usuário",
+          description: "Atualiza o nome ou email do usuário logado. Requer autenticação e só pode editar o próprio perfil.",
+          security: [{ BearerAuth: [] }],
+          parameters: [{ name: "id", in: "path", description: "ID do usuário a ser editado (deve ser o ID do usuário logado)", required: true, schema: { type: "string", format: "uuid" } }],
+          requestBody: { required: true, content: { "application/json": { schema: { $ref: "#/components/schemas/EditUserDTO" } } } },
+          responses: {
+            "200": { description: "Perfil atualizado com sucesso.", content: { "application/json": { schema: { $ref: "#/components/schemas/UserResponse" } } } },
+            "400": { description: "Erro de validação (ex: Novo email já em uso).", content: { "application/json": { schema: { $ref: "#/components/schemas/ErrorResponse" } } } },
+            "401": { description: "Não autorizado (Token inválido).", content: { "application/json": { schema: { $ref: "#/components/schemas/ErrorResponse" } } } },
+            "403": { description: "Proibido (Tentativa de editar perfil de outro usuário).", content: { "application/json": { schema: { $ref: "#/components/schemas/ErrorResponse" } } } },
+            "404": { description: "Usuário não encontrado.", content: { "application/json": { schema: { $ref: "#/components/schemas/ErrorResponse" } } } },
+          },
+        },
+        // --- FIM NOVO: PUT ---
       },
     },
   },
