@@ -1,8 +1,10 @@
-import supertest from 'supertest';
+import supertest from "supertest";
 // Importa a função que cria seu app
-import { createApp } from '../../src/main/config/app'; 
+import { createApp } from "../../src/main/config/app";
 // Importa o cliente Prisma para podermos limpar o banco
-import { PrismaClient } from '@prisma/client'; 
+import { PrismaClient } from "@prisma/client";
+import * as bcrypt from 'bcrypt';
+
 
 // 1. Crie uma instância do app e do prisma
 const app = createApp();
@@ -29,23 +31,26 @@ afterAll(async () => {
   await prisma.$disconnect();
 });
 
-describe('Login do usuário', () => {
-    it('Deve autenticar um usuário com credenciais válidas', async () => {
-        // Primeiro, criamos um usuário diretamente no banco
-        const newUser = await prisma.user.create({
-            data: {
-                email: 'user@example.com',
-                password: 'password123',
-            },
-        });
-        // Agora, tentamos autenticar com as credenciais corretas
-        const response = await request.post('/api/auth').send({
-            email: 'user@example.com',
-            password: 'password123',
-        });
+describe("Login do usuário", () => {
+  it("Deve autenticar um usuário com credenciais válidas", async () => {
+    // Primeiro, criamos um usuário diretamente no banco
+    const passwordHash = await bcrypt.hash("password123", 10);
 
-        expect(response.status).toBe(200);
-        expect(response.body).toHaveProperty('token');
+    // 2. Crie o usuário com o campo CORRETO
+    await prisma.user.create({
+      data: {
+        name: "Test User",
+        email: "user@example.com",
+        passwordHash: passwordHash, // <-- CORRETO
+      },
     });
+    // Agora, tentamos autenticar com as credenciais corretas
+    const response = await request.post("/api/auth").send({
+      email: "user@example.com",
+      password: "password123",
+    });
+
+    expect(response.status).toBe(200);
+    expect(response.body).toHaveProperty("token");
+  });
 });
-    

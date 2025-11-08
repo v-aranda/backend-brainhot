@@ -1,89 +1,130 @@
+Com base em todas as mudanças que fizemos para automatizar e estabilizar seu ambiente de desenvolvimento, aqui está o `README.md` atualizado.
+
+Ele remove completamente a menção ao "Dev Container" (que abolimos) e foca no novo fluxo 100% automatizado, que usa apenas o `docker-compose` e os scripts que criamos.
+
+-----
+
 # Proint 1 API
 
-API Node.js com Clean Architecture, TypeScript, Prisma (Postgres), Jest e Supertest.
+API Node.js com Clean Architecture, TypeScript, Prisma (Postgres), Jest e Supertest, rodando em um ambiente Docker automatizado.
 
 ## Requisitos
-- Docker e Docker Compose
-- (Opcional) VS Code com extensão "Dev Containers"
 
-## Como executar (3 formas)
+  * Docker e Docker Compose
 
-Você pode rodar o projeto de três maneiras comuns: (A) Dev Container (recomendado para desenvolvimento), (B) Docker Compose em modo dev (workflow atual), e (C) Docker Compose / imagem de produção (build do estágio `prod`). Abaixo as instruções para cada uma.
+-----
 
+## 🚀 Como Executar (Desenvolvimento)
 
-A) Dev Container (recomendado)
+Este é o método principal e recomendado. O ambiente é 100% automatizado e consistente, ideal para desenvolvimento.
 
-1. Abra o projeto no VS Code.
-2. Pressione F1 → "Dev Containers: Reopen in Container".
-3. Aguarde o setup automático (instala dependências e roda `prisma generate`).
-4. Rode as migrações (primeira vez) dentro do container:
-   - `npm run db:migrate`
-5. Inicie a API (no container):
-   - `npm run dev`
-6. Teste rápido:
-   - `GET http://localhost:3000/health` → `{ "status": "ok" }`
+1.  **Inicie o ambiente:**
+    (Na primeira vez, use `--build` para construir as imagens)
 
+    ```bash
+    docker-compose --file .docker/docker-compose.yml up --build -d
+    ```
 
-B) Docker Compose — modo desenvolvimento (padrão)
+2.  **Pronto\!**
 
-1. Suba os serviços (usa a config em `.devcontainer/docker-compose.yml`):
-   - `docker compose -f .devcontainer/docker-compose.yml up -d`
-2. Gere o Prisma Client (dentro do container `app`):
-   - `docker compose -f .devcontainer/docker-compose.yml exec app npx prisma generate`
-3. Rode as migrações (dentro do container `app`):
-   - `docker compose -f .devcontainer/docker-compose.yml exec app npm run db:migrate`
-4. A API já inicia em modo dev automaticamente (o serviço `app` executa o fluxo dev com volumes montados).
-5. Teste rápido:
-   - `GET http://localhost:3000/health`
+O script `.docker/entrypoint.dev.sh` (definido no `docker-compose`) cuida de tudo automaticamente **toda vez que o contêiner sobe**:
 
-Observações:
-- O serviço `db` expõe a porta `5432` internamente; o compose mapeia `5433:5432` para o host. Quando executar comandos do Prisma no host (fora do container), aponte para `localhost:5433`.
-- Quando executar comandos dentro do container `app`, a variável `DATABASE_URL` já aponta para `db:5432` e funciona sem ajustes.
+  * Instala as dependências (`npm install`).
+  * Gera o Prisma Client.
+  * Cria o banco de dados de teste (`meubanco_test`), caso não exista.
+  * Aplica as migrações no banco de teste.
+  * Inicia o servidor em modo de desenvolvimento (`npm run dev`).
 
+A API estará disponível em `http://localhost:3000`.
 
-C) Docker Compose — imagem de produção (estágio `prod`)
+Para parar o ambiente, rode:
 
-O repositório contém um Dockerfile multi-stage com estágios `dev`, `builder` e `prod`. O compose adiciona um serviço `app_prod` que builda o estágio `prod`.
+```bash
+docker-compose --file .docker/docker-compose.yml down
+```
 
-1. Build da imagem de produção:
-   - `docker compose -f .devcontainer/docker-compose.yml build app_prod`
-2. Subir DB + app_prod:
-   - `docker compose -f .devcontainer/docker-compose.yml up -d db app_prod`
-3. A aplicação ficará disponível em `http://localhost:3001` (o `app_prod` foi mapeado para a porta 3001 do host para não conflitar com o `app` dev).
+(Adicione `-v` ao final se quiser apagar os volumes do banco e `node_modules` para recomeçar do zero).
 
-Notas para produção:
-- Em produção execute `npx prisma migrate deploy` (não `migrate dev`) para aplicar migrations sem prompts interativos.
-- Verifique as variáveis de ambiente sensíveis (por ex. `JWT_SECRET`) e não utilize valores padrão em produção.
-- O `app_prod` não monta volumes com o código fonte — ele roda a versão buildada do `dist`.
+-----
 
+## 🧪 Testes
 
-## Variáveis de ambiente
-O `docker-compose` já define as principais variáveis para desenvolvimento:
-- `PORT=3000`
-- `DATABASE_URL=postgresql://postgres:postgres@db:5432/appdb` (usada dentro da rede do compose)
-- `NODE_ENV=development`
-- `JWT_SECRET` (default interno: `dev-secret`). Para produção, defina um segredo forte.
+Os testes rodam contra um banco de dados de teste (`meubanco_test`) que é criado e migrado automaticamente pelo `entrypoint.dev.sh`.
 
-## Endpoints principais
-- `GET /health` → health-check
-- Autenticação básica (Prisma + bcrypt + JWT):
-  - `POST /auth/register` { name, email, password } → cria usuário
-  - `POST /auth/login` { email, password } → `{ token }`
-- Usuários (runtime via Prisma):
-  - `POST /api/users` { name, email }
-  - `GET /api/users`
+1.  Com o ambiente rodando (`docker-compose up`), abra um **novo terminal**.
+2.  Execute o comando de teste:
+    ```bash
+    docker-compose --file .docker/docker-compose.yml exec app npm test
+    ```
+3.  Para rodar um arquivo de teste específico:
+    ```bash
+    docker-compose --file .docker/docker-compose.yml exec app npm test -- tests/integration/auth.test.ts
+    ```
 
-## Testes
-- No Dev Container: `npm test`
-- Via Docker Compose:
-  - `docker compose -f .devcontainer/docker-compose.yml exec app npm test`
+-----
 
-## Build/Start fora do container (opcional)
-Se tiver Postgres local e `DATABASE_URL` configurada:
-- `npm install`
-- `npx prisma generate`
-- `npm run db:migrate`
-- Dev: `npm run dev`
-- Prod: `npm run build && npm start`
+## 📦 Build de Produção
 
+O `Dockerfile` é multi-stage e contém os estágios `builder` e `prod` para seu deploy na nuvem. Este setup de desenvolvimento local **não** interfere no seu build de produção.
 
+O seu provedor de cloud (como Coolify) irá ler o `Dockerfile` e construir o target `prod` automaticamente.
+
+-----
+
+## 🌎 Variáveis de Ambiente
+
+As variáveis essenciais de desenvolvimento são definidas no `.docker/docker-compose.yml` (para o `app`) e no `.env.test` (para os testes).
+
+  * `PORT=3000`
+  * `DATABASE_URL=postgresql://postgres:postgres@db:5432/appdb` (Usada pelo app para se conectar ao serviço `db`)
+  * `NODE_ENV=development`
+
+**Importante:** Para o login funcionar, você **deve** adicionar sua `JWT_SECRET` na seção `environment` do serviço `app` no `.docker/docker-compose.yml`:
+
+```yaml
+# .docker/docker-compose.yml
+services:
+  app:
+    # ...
+    environment:
+      # ... (outras vars)
+      - JWT_SECRET=seu-segredo-forte-de-desenvolvimento
+```
+
+Não se esqueça de adicionar a mesma `JWT_SECRET` ao seu arquivo `.env.test`.
+
+-----
+
+## 🔌 Endpoints Principais
+
+Todos os endpoints são prefixados com `/api/v1`.
+
+  * `GET /health` → Health-check
+
+### Usuários
+
+  * `POST /api/v1/users`
+      * Body: `{ "name", "email", "password" }`
+      * Resposta: Cria um novo usuário.
+  * `GET /api/v1/users`
+      * Resposta: Lista todos os usuários.
+  * `GET /api/v1/users/:id`
+      * Resposta: Busca um usuário por ID.
+
+### Autenticação
+
+  * `POST /api/v1/sessions`
+      * Body: `{ "email", "password" }`
+      * Resposta: Autentica o usuário e retorna um `{ "token": "..." }`.
+
+-----
+
+## 🖥️ Executando Localmente (Sem Docker)
+
+Se você prefere rodar fora do Docker (e tem o Postgres rodando localmente):
+
+1.  Crie e configure um arquivo `.env` com `DATABASE_URL` e `JWT_SECRET`.
+2.  `npm install`
+3.  `npx prisma generate`
+4.  `npx prisma migrate dev` (para criar e migrar seu banco)
+5.  `npm run dev`

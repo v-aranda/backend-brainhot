@@ -1,7 +1,7 @@
 import { PasswordHasher } from '../services/PasswordHasher';
 import { TokenGenerator } from '../services/TokenGenerator';
 import { UserRepository } from '../../domain/repositories/UserRepository';
-import { LoginDTO } from '../../domain/dto/AuthDTO';
+import { AuthDTO } from '../../domain/dto/AuthDTO';
 
 export class AuthenticateUserUseCase {
   constructor(
@@ -10,7 +10,7 @@ export class AuthenticateUserUseCase {
     private tokenGenerator: TokenGenerator
   ) {}
 
-    async execute(loginDTO: LoginDTO): Promise<string> {
+    async execute(loginDTO: AuthDTO): Promise<string> {
     const user = await this.userRepository.findByEmail(loginDTO.email);
     if (!user) throw new Error("Usuário ou senha inválidos");
 
