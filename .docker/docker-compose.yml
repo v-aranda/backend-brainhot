@@ -7,22 +7,18 @@ services:
     working_dir: /workspace
     # Este comando garante que o script é executável (para Windows)
     # e depois o executa como ponto de entrada.
-    command: sh -c "chmod +x .docker/entrypoint.dev.sh && .docker/entrypoint.dev.sh"
+    command: sh -c "chmod +x .docker/entrypoint.dev.sh && ./.docker/entrypoint.dev.sh"
     ports:
       - "3000:3000"
-    environment:
-      - PORT=3000
-      - NODE_ENV=development
-      - DATABASE_URL=postgresql://postgres:postgres@db:5432/appdb
-      - PRISMA_SKIP_POSTINSTALL_GENERATE=true
-      - JWT_SECRET="7e5bffe40655205ea8fa81e9c155c9abf125115de7deef109ae6972247e3f37533934c474ca816fdab432c2d8899a7b805499b867754dcf83a8d5beb6a7fcc02"
+    env_file:
+      - ../.env
     volumes:
       # Sincroniza todo o seu código, exceto node_modules
       - ..:/workspace:cached
       # Volume nomeado para persistir node_modules
       - app_node_modules:/workspace/node_modules
       # Mapeia o entrypoint para dentro do contêiner
-      - ./entrypoint.dev.sh:/workspace/.docker/entrypoint.dev.sh
+      # - ./entrypoint.dev.sh:/workspace/.docker/entrypoint.dev.sh 
     depends_on:
       - db
     mem_limit: 2g
