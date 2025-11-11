@@ -1,5 +1,5 @@
 import supertest from "supertest";
-import { createApp } from "../../src/main/config/app";
+import { createApp } from '../../../src/main/config/app';
 import { PrismaClient } from "@prisma/client";
 import * as bcrypt from 'bcrypt';
 

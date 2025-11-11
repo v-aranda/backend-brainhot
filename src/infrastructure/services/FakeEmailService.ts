@@ -3,7 +3,7 @@ import { EmailService } from '../../application/services/EmailService';
 interface MailRecord {
   to: string;
   subject: string;
-  body: string;
+  html: string;
 }
 
 export class FakeEmailService implements EmailService {

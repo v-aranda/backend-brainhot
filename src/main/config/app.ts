@@ -7,7 +7,11 @@ import { EmailService } from '../../application/services/EmailService'; // Impor
 // Rotas
 import { userRouter } from '../../interface/http/routes/userRouter';
 import { authRouter } from '../../interface/http/routes/AuthRouter';
-import { createPasswordRouter } from '../../interface/http/routes/PasswordRouter'; // 🌟 MUDANÇA AQUI: Será uma função
+import { createPasswordRouter } from '../../interface/http/routes/PasswordRouter';
+import { subjectRouter } from "../../interface/http/routes/subjectRouter";
+import { topicRouter } from "../../interface/http/routes/topicRouter";
+import { questionRouter } from "../../interface/http/routes/questionRouter";
+// 🌟 MUDANÇA AQUI: Será uma função
 
 // 💡 Defina uma instância Padrão (de produção) para uso normal
 // Você precisará definir o serviço de e-mail padrão aqui (pode ser o fakeService ou um real)
@@ -31,6 +35,9 @@ export const createApp = (emailServiceOverride?: EmailService) => { // Aceita um
   
   app.use('/api', userRouter);
   app.use('/api', authRouter);
+  app.use('/api', subjectRouter);
+  app.use('/api', topicRouter);
+  app.use('/api', questionRouter);
 
   // 🌟 MUDANÇA AQUI: Chama a função para criar o router, injetando o serviço
   app.use('/api', createPasswordRouter(currentEmailService));
