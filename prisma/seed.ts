@@ -2,25 +2,21 @@
 import { PrismaClient } from '@prisma/client';
 
 // 🚨 CORREÇÃO: Função para limpar a DATABASE_URL.
-// A URL de Accelerate é injetada (ex: prisma+postgres://), mas o seed só entende postgresql://
 const getCleanDatabaseUrl = (url: string | undefined): string => {
   if (!url) {
     throw new Error('DATABASE_URL não está definida no ambiente.');
   }
 
-  // Remove o prefixo 'prisma+' ou 'prisma://' para obter a URL padrão do Postgres.
+  // Remove prefixos do Prisma Accelerate
   if (url.startsWith('prisma+postgres://')) {
     return url.replace('prisma+', ''); // Transforma 'prisma+postgres://' em 'postgresql://'
   }
   if (url.startsWith('prisma://')) {
-    // Se for só 'prisma://', a URL base precisa ser extraída ou a URL normal fallback deve ser usada.
-    // Vamos assumir que a URL fallback (process.env.DATABASE_URL) é a quebra, então usamos a URL padrão,
-    // mas se a sua plataforma insiste em 'prisma://', a lógica de extração é mais complexa.
-    // Para simplificar, forçamos o formato 'postgres://' se for um prefixo de acelerate.
+    // Isso é mais perigoso, mas tenta forçar o formato postgres
     return url.replace('prisma://', 'postgresql://');
   }
   
-  // Se for uma URL normal de Postgres, retorna ela mesma.
+  // Retorna a URL original se for o formato padrão (postgresql://)
   return url;
 };
 
@@ -68,6 +64,12 @@ const enemSubjects = [
 ];
 
 async function main() {
+    // 🚀 NOVO BLOCO DE LOGGING
+    console.log('--- DIAGNÓSTICO DE URL DE PRODUÇÃO ---');
+    console.log(`[SEED] ENV.DATABASE_URL (Original): ${process.env.DATABASE_URL}`);
+    console.log(`[SEED] URL Limpa (Tentativa de Conexão): ${cleanUrl}`);
+    console.log('------------------------------------');
+
     console.log('[SEED] Iniciando o processo de seed...');
     for (const subjectData of enemSubjects) {
         console.log(`[SEED] Processando: ${subjectData.name}`);
