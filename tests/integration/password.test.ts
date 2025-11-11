@@ -57,7 +57,7 @@ describe('🔑 Password Reset (Integration)', () => {
       const sentEmail = fakeEmailService.getLastSentEmail();
       expect(sentEmail).toBeDefined();
       expect(sentEmail?.to).toBe('registered@example.com');
-      expect(sentEmail?.body).toContain('token='); 
+      expect(sentEmail?.html).toContain('token='); 
 
       // 5. Assert (Database Token)
       const tokenInDb = await prisma.passwordResetToken.findFirst({

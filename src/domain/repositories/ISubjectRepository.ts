@@ -1,6 +1,6 @@
 // src/domain/repositories/ISubjectRepository.ts
 import { Subject } from '@prisma/client'; // Usando o tipo do Prisma
-import { CreateSubjectDTO, UpdateSubjectDTO } from '../dto/SubjectsDTO';
+import { CreateSubjectDTO, UpdateSubjectDTO } from '../dto/subject.dto';
 
 export interface ISubjectRepository {
   create(data: CreateSubjectDTO): Promise<Subject>;
