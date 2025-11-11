@@ -15,7 +15,8 @@
   },
   "include": [
     "src",
-    "tests"
+    "tests",
+    "prisma/seed.ts" 
   ],
   "exclude": [
     "node_modules",
