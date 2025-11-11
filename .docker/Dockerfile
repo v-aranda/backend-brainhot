@@ -36,7 +36,7 @@ COPY package.json package-lock.json* ./
 RUN npm install
 RUN npm install -g typescript 
 COPY . .
-RUN DATABASE_URL="" npx prisma generate
+RUN npx prisma generate --no-connect
 RUN tsc --project tsconfig.prod.json
 
 # -----------------------------------------------------------------
