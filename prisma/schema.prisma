@@ -35,3 +35,49 @@ model PasswordResetToken {
   
   createdAt       DateTime           @default(now())
 }
+
+// Subject (Ex: Mathematics, Portuguese)
+model Subject {
+  id   String @id @default(uuid())
+  name String @unique
+
+  topics    Topic[] // A Subject has many Topics
+  questions Question[] // A Subject has many Questions
+}
+
+// Topic (Ex: Algebra, Syntax)
+model Topic {
+  id   String @id @default(uuid())
+  name String
+
+  subjectId String
+  subject   Subject @relation(fields: [subjectId], references: [id], onDelete: Cascade) // Deleting Subject removes Topic
+
+  // N-to-N relation with Question
+  questions Question[]
+}
+
+// Question (The statement)
+model Question {
+  id   String @id @default(uuid())
+  text String @db.Text // Question text
+
+  subjectId String
+  subject   Subject @relation(fields: [subjectId], references: [id]) // Main subject
+
+  // 1-to-N relation with Alternative
+  alternatives Alternative[]
+
+  // N-to-N relation with Topic
+  topics Topic[]
+}
+
+// Alternative (The options for the question)
+model Alternative {
+  id        String  @id @default(uuid())
+  text      String
+  isCorrect Boolean @default(false) // This is our "answer key"
+
+  questionId String
+  question   Question @relation(fields: [questionId], references: [id], onDelete: Cascade) // Deleting Question removes alternatives
+}
