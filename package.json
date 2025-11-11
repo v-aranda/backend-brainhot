@@ -8,24 +8,18 @@
     "dev": "nodemon",
     "build": "tsc",
     "start": "node dist/main/server.js",
-
     "db:migrate": "prisma migrate dev --name init",
-    
     "db:seed": "dotenv -e .env -o -- ts-node prisma/seed.ts",
-
     "db:seed:test": "dotenv -e .env.test -o -- ts-node prisma/seed.ts",
 
-    "db:seed:prod": "node dist/prisma/seed.js",
-    
+    "db:seed:prod": "node dist/seed.js", 
+
     "test": "npm run migrate:test && dotenv -e .env.test -o -- jest --runInBand",
     "migrate:test": "dotenv -e .env.test -o -- npx prisma migrate deploy",
-
     "migrate:reset:test": "dotenv -e .env.test -o -- npx prisma migrate reset --force --skip-seed && npm run db:seed:test",
-
     "test:auth": "npm run test -- tests/integration/authentication",
     "test:questions": "npm run test -- tests/integration/questions_base",
     "test:watch": "jest --watch",
-    
     "prisma": "prisma",
     "db:generate": "prisma generate"
   },
