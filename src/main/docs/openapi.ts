@@ -1,7 +1,7 @@
 // src/main/docs/openapi.ts
 import swaggerJSDoc from "swagger-jsdoc";
-import { allSchemas } from './schemas'; // 🚀 IMPORTA SCHEMAS
-import { allPaths } from './paths';     // 🚀 IMPORTA PATHS
+import { allSchemas } from './api/schemas'; // 🚀 IMPORTA SCHEMAS
+import { allPaths } from './api/paths';     // 🚀 IMPORTA PATHS
 
 export const swaggerSpec = swaggerJSDoc({
   definition: {
