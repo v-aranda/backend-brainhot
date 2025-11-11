@@ -2,11 +2,8 @@
 import { Alternative } from './alternative';
 
 export class Question {
-  id: string;
-  text: string;
-  subjectId: string; // ID da Disciplina principal
-
-  // Relacionamentos
-  alternatives: Alternative[];
-  // topics: Topic[]; // Relação N-N, podemos omitir da entidade pura
+  id!: string;
+  text!: string;
+  subjectId!: string;
+  alternatives!: Alternative[];
 }
