@@ -36,7 +36,7 @@ COPY package.json package-lock.json* ./
 RUN npm install
 RUN npm install -g typescript 
 COPY . .
-RUN npx prisma generate --no-connect
+RUN npx prisma generate --no-engine
 RUN tsc --project tsconfig.prod.json
 
 # -----------------------------------------------------------------
@@ -50,6 +50,6 @@ COPY --from=builder /workspace/package-lock.json* ./
 RUN npm install --production
 COPY --from=builder /workspace/dist ./dist
 COPY --from=builder /workspace/prisma ./prisma
-RUN npx prisma generate
+RUN npx prisma generate --no-engine
 EXPOSE 3000
 CMD ["sh", "-c", "npx prisma migrate deploy && npm run db:seed:prod && node dist/main/server.js"]
