@@ -5,7 +5,8 @@
     "outDir": "dist",
     "rootDirs": [
       "src",
-      "tests"
+      "tests",
+      "prisma" 
     ],
     "strict": true,
     "esModuleInterop": true,
@@ -16,7 +17,7 @@
   "include": [
     "src",
     "tests",
-    "prisma/seed.ts" 
+    "prisma" 
   ],
   "exclude": [
     "node_modules",
