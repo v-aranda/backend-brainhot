@@ -81,3 +81,12 @@ model Alternative {
   questionId String
   question   Question @relation(fields: [questionId], references: [id], onDelete: Cascade) // Deleting Question removes alternatives
 }
+
+// [SEED] Define o comando para 'npx prisma db seed'
+generator db_seed {
+  provider = "ts-node"
+  output   = "." // Diretório de saída (não usado aqui, mas necessário)
+  // Aponta para o nosso script de seed em TypeScript
+  // O Prisma usará o 'ts-node' (que está no seu devDependencies) para executá-lo
+  seed     = "ts-node prisma/seed.ts"
+}

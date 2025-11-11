@@ -52,4 +52,4 @@ COPY --from=builder /workspace/dist ./dist
 COPY --from=builder /workspace/prisma ./prisma
 RUN npx prisma generate
 EXPOSE 3000
-CMD ["sh", "-c", "npx prisma migrate deploy && node dist/main/server.js"]
+CMD ["sh", "-c", "npx prisma migrate deploy && npm run db:seed:prod && node dist/main/server.js"]
