@@ -11,6 +11,11 @@
     "test": "npm run migrate:test && dotenv -e .env.test -o -- jest --runInBand",
     "migrate:test": "dotenv -e .env.test -o -- npx prisma migrate deploy",
     "migrate:reset:test": "dotenv -e .env.test -o -- npx prisma migrate reset",
+    
+    "test:auth": "npm run test -- tests/integration/authentication",
+    "test:questions": "npm run test -- tests/integration/questions_base",
+    
+
     "test:watch": "jest --watch",
     "prisma": "prisma",
     "db:generate": "prisma generate",

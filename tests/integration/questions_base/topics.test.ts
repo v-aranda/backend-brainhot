@@ -1,6 +1,6 @@
 // tests/integration/topics.test.ts
 import supertest from 'supertest';
-import { createApp } from '../../src/main/config/app';
+import { createApp } from '../../../src/main/config/app';
 import { PrismaClient, Subject, Topic } from '@prisma/client'; // Importa os tipos
 
 // [PADRÃO] Instancia o app e o prisma

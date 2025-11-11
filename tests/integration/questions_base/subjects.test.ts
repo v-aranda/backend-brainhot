@@ -1,7 +1,7 @@
 // tests/integration/subjects.test.ts
 import supertest from 'supertest';
 // [PADRÃO] Importa a fábrica de app
-import { createApp } from '../../src/main/config/app';
+import { createApp } from '../../../src/main/config/app';
 // [PADRÃO] Instancia o Prisma localmente
 import { PrismaClient, Subject } from '@prisma/client';
 

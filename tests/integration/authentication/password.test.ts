@@ -1,10 +1,10 @@
 import supertest from 'supertest';
-import { createApp } from '../../src/main/config/app';
+import { createApp } from '../../../src/main/config/app';
 import { PrismaClient } from '@prisma/client';
-import { fakeEmailService } from '../../src/infrastructure/services/FakeEmailService';
+import { fakeEmailService } from '../../../src/infrastructure/services/FakeEmailService';
 // 🌟 Imports adicionados para setup e verificação
-import { CryptoTokenHasher } from '../../src/infrastructure/services/CryptoTokenHasher';
-import { BcryptPasswordHasher } from '../../src/infrastructure/services/BycriptPasswordHasher';
+import { CryptoTokenHasher } from '../../../src/infrastructure/services/CryptoTokenHasher';
+import { BcryptPasswordHasher } from '../../../src/infrastructure/services/BycriptPasswordHasher';
 
 const app = createApp(fakeEmailService); 
 const prisma = new PrismaClient();

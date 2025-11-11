@@ -10,6 +10,7 @@ import { authRouter } from '../../interface/http/routes/AuthRouter';
 import { createPasswordRouter } from '../../interface/http/routes/PasswordRouter';
 import { subjectRouter } from "../../interface/http/routes/subjectRouter";
 import { topicRouter } from "../../interface/http/routes/topicRouter";
+import { questionRouter } from "../../interface/http/routes/questionRouter";
 // 🌟 MUDANÇA AQUI: Será uma função
 
 // 💡 Defina uma instância Padrão (de produção) para uso normal
@@ -36,6 +37,7 @@ export const createApp = (emailServiceOverride?: EmailService) => { // Aceita um
   app.use('/api', authRouter);
   app.use('/api', subjectRouter);
   app.use('/api', topicRouter);
+  app.use('/api', questionRouter);
 
   // 🌟 MUDANÇA AQUI: Chama a função para criar o router, injetando o serviço
   app.use('/api', createPasswordRouter(currentEmailService));
